@@ -2,7 +2,7 @@ import { useEffect, useState, useTransition } from 'react';
 import { useDispatch } from 'react-redux';
 import type { AppDispatch } from './app/store';
 import type { Order } from '../types/orders';
-import { setOrders } from './features/orders/orderSlice';
+import { setOrders, updateOrderStatus } from './features/orders/orderSlice';
 import { Box, Container, Paper, Skeleton, Typography, useColorScheme } from '@mui/material';
 import { Navbar } from './components/Navbar';
 import { OrderTable } from './components/OrderTable';
@@ -27,6 +27,52 @@ function App() {
       }
     });
   }, []);
+
+  //1. simulate real-time status updates (simulate with intervals) 
+
+  //Usage:
+  // chance(0.1) = 10% chance
+  // chance(0.5) = 50% chance
+  // chance(1) = always true
+  // chance(0) = always false
+  function chance(probability: number): boolean {
+    return Math.random() < probability;
+  }
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      dispatch((prevDispatch, getState) => {
+        const { orders } = getState().orders
+        // Simulate status transitions
+
+        orders.forEach(order => {
+          if (order.status === "pending" && chance(0.1)) {
+            prevDispatch(updateOrderStatus({ id: order.id, status: 'shipped' }));
+          }
+
+          if (order.status === "shipped" && chance(0.2)) {
+            prevDispatch(updateOrderStatus({ id: order.id, status: 'delivered' }));
+          }
+
+          if (order.status === "shipped" && chance(0.3)) {
+            prevDispatch(updateOrderStatus({ id: order.id, status: 'cancelled' }));
+          }
+
+          if (order.status === "processing" && chance(0.2)) {
+            prevDispatch(updateOrderStatus({ id: order.id, status: 'shipped' }));
+          }
+          if (order.status === "cancelled" && chance(0.2)) {
+            prevDispatch(updateOrderStatus({ id: order.id, status: 'processing' }));
+          }
+          if (order.status === 'delivered' && chance(0.1)) {
+            prevDispatch(updateOrderStatus({ id: order.id, status: 'pending' }));
+          }
+        });
+      })
+    }, 5000) // every 5 seconds
+    return () => clearInterval(interval);
+  }, [])
+
 
   return (
     <Box
