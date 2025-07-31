@@ -22,11 +22,14 @@ import SearchIcon from '@mui/icons-material/Search';
 import { format } from "date-fns";
 import type { OrderStatus } from '../../types/orders';
 
+type OrderKeys = 'id' | 'customerName' | 'status' | 'total' | 'orderDate';
+
 export const OrderTable = () => {
   const orders = useSelector((state: RootState) => state.orders.orders);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
+  const [sortConfig, setSortConfig] = useState<{ key: OrderKeys, direction: 'asc' | 'desc' } | null>(null);
   const theme = useTheme();
   const { mode } = useColorScheme()
 
@@ -46,13 +49,49 @@ export const OrderTable = () => {
     setPage(0);
   };
 
+  const handleSort = (key: OrderKeys) => {
+    setSortConfig(prev => {
+      if (!prev || prev.key !== key) {
+        return { key, direction: 'asc' };
+      }
+      return {
+        key,
+        direction: prev.direction === 'asc' ? 'desc' : 'asc'
+      };
+    });
+  };
+
+  const sortedOrders = useMemo(() => {
+    const sorted = [...filteredOrders];
+    if (!sortConfig) return sorted;
+
+    sorted.sort((a, b) => {
+      const { key, direction } = sortConfig;
+      const factor = direction === 'asc' ? 1 : -1;
+
+      if (key === 'orderDate') {
+        return (new Date(a[key]).getTime() - new Date(b[key]).getTime()) * factor;
+      }
+      if (key === 'total') {
+        return (a[key] - b[key]) * factor;
+      }
+      if (key === 'status') {
+        return (a[key] === b[key] ? 0 : a[key] > b[key] ? 1 : -1) * factor;
+      }
+      return (a[key].toString().localeCompare(b[key].toString())) * factor;
+    });
+
+    return sorted;
+  }, [filteredOrders, sortConfig]);
+
+
   const getStatusColor = (status: OrderStatus) => {
     switch (status) {
       case 'pending': return theme.palette.warning.main;
       case 'delivered': return theme.palette.success.main;
       case 'cancelled': return theme.palette.error.main;
       case 'shipped': return theme.palette.info.main;
-      case 'processing':return theme.palette.secondary.main
+      case 'processing': return theme.palette.secondary.main
       default: return theme.palette.grey[500];
     }
   };
@@ -98,7 +137,8 @@ export const OrderTable = () => {
                 <SearchIcon />
               </InputAdornment>),
               sx: { borderRadius: 2, backgroundColor: theme.palette.background.default },
-            }}}
+            }
+          }}
           sx={{ minWidth: 300 }}
         />
       </Box>
@@ -111,16 +151,16 @@ export const OrderTable = () => {
                 ? 'rgba(30, 30, 30, 0.5)'
                 : 'rgba(241, 243, 245, 0.8)'
             }}>
-              <TableCell sx={{ fontWeight: 700 }}>ORDER ID</TableCell>
-              <TableCell sx={{ fontWeight: 700 }}>CUSTOMER</TableCell>
-              <TableCell sx={{ fontWeight: 700 }}>STATUS</TableCell>
-              <TableCell sx={{ fontWeight: 700 }} align="right">TOTAL</TableCell>
-              <TableCell sx={{ fontWeight: 700 }}>DATE</TableCell>
+              <TableCell sx={{ fontWeight: 700, cursor: 'pointer' }} onClick={() => handleSort('id')}>ORDER ID {sortConfig?.key === 'id' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}</TableCell>
+              <TableCell sx={{ fontWeight: 700, cursor: 'pointer' }} onClick={() => handleSort('customerName')}>CUSTOMER {sortConfig?.key === 'customerName' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}</TableCell>
+              <TableCell sx={{ fontWeight: 700, cursor: 'pointer' }} onClick={()=> handleSort('status')}>STATUS {sortConfig?.key === 'status' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}</TableCell>
+              <TableCell sx={{ fontWeight: 700, cursor: 'pointer' }} align="right" onClick={()=> handleSort('total')}>TOTAL {sortConfig?.key === 'total' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}</TableCell>
+              <TableCell sx={{ fontWeight: 700, cursor: 'pointer' }} onClick={()=> handleSort('orderDate')}>DATE {sortConfig?.key === 'orderDate' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}</TableCell>
             </TableRow>
           </TableHead>
 
           <TableBody>
-            {filteredOrders.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+            {sortedOrders.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
               .map((order) => (
                 <TableRow
                   hover
