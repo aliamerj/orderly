@@ -142,7 +142,7 @@ const OrderTable = () => {
             </Typography>
           </Box>
 
-          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+          <Stack direction="row" spacing={1} alignItems="center"  sx={{justifyContent: 'center', gap: 1}} flexWrap="wrap">
             <TextField
               variant="outlined"
               size="small"
