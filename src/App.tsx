@@ -2,22 +2,25 @@ import { useEffect, useState, useTransition } from 'react';
 import { useDispatch } from 'react-redux';
 import type { AppDispatch } from './app/store';
 import type { Order } from '../types/orders';
-import { setOrders, updateOrderStatus } from './features/orders/orderSlice';
+import { addNewOrder, setOrders, updateOrderStatus } from './features/orders/orderSlice';
 import { Box, Container, Paper, Skeleton, Typography, useColorScheme } from '@mui/material';
 import { Navbar } from './components/Navbar';
 import { OrderTable } from './components/OrderTable';
+import { createOrder } from './fakeDataGenerater';
+import { useSnackbar } from 'notistack';
 
 function App() {
   const dispatch = useDispatch<AppDispatch>();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const { mode } = useColorScheme()
+  const { enqueueSnackbar } = useSnackbar();
 
 
   useEffect(() => {
     startTransition(async () => {
       try {
-         //1. Simulate fetching data from backend
+        //1. Simulate fetching data from backend
         const res = await fetch("/data/mock-orders.json");
         if (!res.ok) throw new Error("Failed to load orders");
         const data = await res.json();
@@ -73,6 +76,20 @@ function App() {
     return () => clearInterval(interval);
   }, [])
 
+  useEffect(() => {
+    let currentOrderCount = 20;
+    const interval = setInterval(() => {
+      const newOrder = createOrder(currentOrderCount)
+      dispatch(addNewOrder(newOrder))
+      enqueueSnackbar(`📦 New order from ${newOrder.customerName}`, {
+        variant: 'warning',
+        style: {color: 'black', fontWeight: 600}
+      });
+      currentOrderCount += 1
+    }, 15000)// every 15 seconds
+    return () => clearInterval(interval);
+  }, [])
+
 
   return (
     <Box
@@ -83,7 +100,6 @@ function App() {
       }}
     >
       <Navbar />
-
       <Container
         maxWidth="xl"
         sx={{

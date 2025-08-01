@@ -26,6 +26,7 @@ export const BulkActions = ({ selectedOrdersId, onUnSelectedOrder }: { selectedO
 
     enqueueSnackbar(`Marked ${selectedOrdersId.length} orders as ${status}`, {
       variant: 'success',
+      style: { color: 'black', fontWeight: 600 }
     });
 
     onUnSelectedOrder()
