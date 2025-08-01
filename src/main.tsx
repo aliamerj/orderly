@@ -5,6 +5,7 @@ import App from './App.tsx'
 import { Provider } from 'react-redux'
 import { store } from './app/store.ts'
 import { createTheme, CssBaseline, ThemeProvider } from '@mui/material'
+import { SnackbarProvider } from 'notistack';
 
 const theme = createTheme({
   colorSchemes: {
@@ -84,7 +85,12 @@ createRoot(document.getElementById('root')!).render(
     <ThemeProvider theme={theme} defaultMode="system">
       <CssBaseline />
       <Provider store={store}>
-        <App />
+        <SnackbarProvider
+          maxSnack={3}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        >
+          <App />
+        </SnackbarProvider>
       </Provider>
     </ThemeProvider>
   </StrictMode>,

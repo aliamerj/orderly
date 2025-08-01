@@ -11,6 +11,7 @@ export type Order = {
 }
 
 export type OrderStatus = "pending" | "processing" | "shipped" | "delivered" | "cancelled";
+export const statusOptions: OrderStatus[] = ['pending', 'processing', 'delivered', 'shipped', 'cancelled'];
 
 type Item = {
   id: string;

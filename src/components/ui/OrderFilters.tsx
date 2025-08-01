@@ -22,7 +22,7 @@ import { DesktopDatePicker } from '@mui/x-date-pickers/DesktopDatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { useTheme } from '@mui/material/styles';
-import type { Order, OrderStatus } from '../../../types/orders';
+import { statusOptions, type Order, type OrderStatus } from '../../../types/orders';
 import { useStatusColor } from '../../hooks';
 
 type DateRange = {
@@ -34,8 +34,6 @@ type AmountRange = {
   min: number | null;
   max: number | null;
 };
-
-const statusOptions: OrderStatus[] = ['pending', 'processing', 'delivered', 'shipped', 'cancelled'];
 
 
 export const OrderFilters = ({ orders, onFilterChange }: { orders: Order[], onFilterChange: (orders: Order[] | null) => void }) => {

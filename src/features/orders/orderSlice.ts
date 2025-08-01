@@ -24,11 +24,19 @@ const orderSlice = createSlice({
     },
     addNewOrder: (state, action: PayloadAction<Order>) => {
       state.orders.unshift(action.payload)
+    },
+    updateMultipleOrderStatuses: (state, action: PayloadAction<{ ids: string[]; status: OrderStatus }>) => {
+      const { ids, status } = action.payload;
+      state.orders.forEach(order => {
+        if (ids.includes(order.id)) {
+          order.status = status;
+        }
+      });
     }
   }
 })
 
 
-export const { setOrders, updateOrderStatus, addNewOrder } = orderSlice.actions;
+export const { setOrders, updateOrderStatus, addNewOrder, updateMultipleOrderStatuses } = orderSlice.actions;
 export default orderSlice.reducer;
 

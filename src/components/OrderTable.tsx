@@ -17,6 +17,8 @@ import {
   Chip,
   useTheme,
   useColorScheme,
+  Stack,
+  Checkbox,
 } from "@mui/material";
 import SearchIcon from '@mui/icons-material/Search';
 import { format } from "date-fns";
@@ -24,7 +26,10 @@ import { OrderFilters } from './ui/OrderFilters';
 import { useStatusColor } from '../hooks';
 import type { Order } from '../../types/orders';
 import { OrderDetailsDialog } from './ui/OrderDetailsDialog';
-
+import { BulkActions } from './ui/BulkActions';
+import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
+import CheckBoxIcon from '@mui/icons-material/CheckBox';
+import IndeterminateCheckBoxIcon from '@mui/icons-material/IndeterminateCheckBox';
 type OrderKeys = 'id' | 'customerName' | 'status' | 'total' | 'orderDate';
 
 export const OrderTable = () => {
@@ -34,7 +39,8 @@ export const OrderTable = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState<{ key: OrderKeys, direction: 'asc' | 'desc' } | null>(null);
   const [filters, setFilters] = useState<Order[] | null>(null)
-  const [selectedOrder, setSeletedOrder] = useState<Order | null>(null);
+  const [clickedOrder, setClickedOrder] = useState<Order | null>(null);
+  const [selected, setSelected] = useState<string[]>([]);
   const theme = useTheme();
   const getStatusColor = useStatusColor()
   const { mode } = useColorScheme()
@@ -59,6 +65,12 @@ export const OrderTable = () => {
         direction: prev.direction === 'asc' ? 'desc' : 'asc'
       };
     });
+  };
+
+  const handleSelectAllClick = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!event.target.checked) return setSelected([])
+    const newSelected = orders.map(order => order.id);
+    setSelected(newSelected);
   };
 
   const sortedOrders = useMemo(() => {
@@ -86,10 +98,10 @@ export const OrderTable = () => {
       });
     }
 
-    if (selectedOrder) {
-      const updateOrder = orders.find(o => o.id === selectedOrder.id)
+    if (clickedOrder) {
+      const updateOrder = orders.find(o => o.id === clickedOrder.id)
       if (!updateOrder) return sorted
-      setSeletedOrder(updateOrder)
+      setClickedOrder(updateOrder)
     }
 
     return sorted;
@@ -107,6 +119,7 @@ export const OrderTable = () => {
           transition: 'all 0.3s ease'
         }}
       >
+        {selected.length > 0 && (<BulkActions selectedOrdersId={selected} onUnSelectedOrder={() => setSelected([])} />)}
         <Box sx={{
           p: 3,
           display: 'flex',
@@ -116,6 +129,7 @@ export const OrderTable = () => {
           gap: 2,
           borderBottom: `1px solid ${theme.palette.divider}`
         }}>
+
           <Box>
             <Typography variant="subtitle1" fontWeight={600}>
               {sortedOrders.length} orders
@@ -125,7 +139,7 @@ export const OrderTable = () => {
             </Typography>
           </Box>
 
-          <Box display="flex" gap={1} flexWrap="wrap">
+          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
             <TextField
               variant="outlined"
               size="small"
@@ -147,7 +161,7 @@ export const OrderTable = () => {
               orders={orders}
               onFilterChange={(orders) => setFilters(orders)}
             />
-          </Box>
+          </Stack>
         </Box>
 
         <TableContainer>
@@ -158,6 +172,22 @@ export const OrderTable = () => {
                   ? 'rgba(30, 30, 30, 0.5)'
                   : 'rgba(241, 243, 245, 0.8)'
               }}>
+                <TableCell padding="checkbox">
+                  <Checkbox
+                    indeterminate={selected.length > 0 && selected.length === sortedOrders.length}
+                    checked={sortedOrders.length > 0 && selected.length === sortedOrders.length}
+                    onChange={handleSelectAllClick}
+                    icon={<CheckBoxOutlineBlankIcon />}
+                    checkedIcon={<CheckBoxIcon />}
+                    indeterminateIcon={<IndeterminateCheckBoxIcon />}
+                    sx={{
+                      color: theme.palette.text.secondary,
+                      '&.Mui-checked': {
+                        color: theme.palette.primary.main,
+                      },
+                    }}
+                  />
+                </TableCell>
                 <TableCell sx={{ fontWeight: 700, cursor: 'pointer' }} onClick={() => handleSort('id')}>ORDER ID {sortConfig?.key === 'id' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}</TableCell>
                 <TableCell sx={{ fontWeight: 700, cursor: 'pointer' }} onClick={() => handleSort('customerName')}>CUSTOMER {sortConfig?.key === 'customerName' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}</TableCell>
                 <TableCell sx={{ fontWeight: 700, cursor: 'pointer' }} onClick={() => handleSort('status')}>STATUS {sortConfig?.key === 'status' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}</TableCell>
@@ -171,7 +201,6 @@ export const OrderTable = () => {
                 .map((order) => (
                   <TableRow
                     hover
-                    onClick={() => setSeletedOrder(order)}
                     key={order.id}
                     sx={{
                       '&:last-child td, &:last-child th': { border: 0 },
@@ -179,9 +208,20 @@ export const OrderTable = () => {
                       cursor: 'pointer'
                     }}
                   >
-                    <TableCell sx={{ fontWeight: 500 }}>#{order.id}</TableCell>
-                    <TableCell sx={{ fontWeight: 500 }}>{order.customerName}</TableCell>
-                    <TableCell>
+                    <TableCell padding="checkbox" onClick={() => setSelected(prev => [...prev, order.id])}>
+                      <Checkbox
+                        checked={selected.includes(order.id)}
+                        sx={{
+                          color: theme.palette.text.secondary,
+                          '&.Mui-checked': {
+                            color: theme.palette.primary.main,
+                          },
+                        }}
+                      />
+                    </TableCell>
+                    <TableCell onClick={() => setClickedOrder(order)} sx={{ fontWeight: 500 }}>#{order.id}</TableCell>
+                    <TableCell onClick={() => setClickedOrder(order)} sx={{ fontWeight: 500 }}>{order.customerName}</TableCell>
+                    <TableCell onClick={() => setClickedOrder(order)} >
                       <Chip
                         label={order.status}
                         size="small"
@@ -192,10 +232,10 @@ export const OrderTable = () => {
                         }}
                       />
                     </TableCell>
-                    <TableCell align="right" sx={{ fontWeight: 600 }}>
+                    <TableCell onClick={() => setClickedOrder(order)} align="right" sx={{ fontWeight: 600 }}>
                       ${order.total.toFixed(2)}
                     </TableCell>
-                    <TableCell>
+                    <TableCell onClick={() => setClickedOrder(order)} >
                       {format(new Date(order.orderDate), "MMM dd, yyyy HH:mm")}
                     </TableCell>
                   </TableRow>
@@ -221,8 +261,8 @@ export const OrderTable = () => {
         />
       </Paper>
       <OrderDetailsDialog
-        onClose={() => setSeletedOrder(null)}
-        order={selectedOrder}
+        onClose={() => setClickedOrder(null)}
+        order={clickedOrder}
       />
     </>
   );
