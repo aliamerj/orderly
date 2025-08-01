@@ -20,7 +20,9 @@ import {
 } from "@mui/material";
 import SearchIcon from '@mui/icons-material/Search';
 import { format } from "date-fns";
-import type { OrderStatus } from '../../types/orders';
+import { OrderFilters } from './ui/OrderFilters';
+import { useStatusColor } from '../hooks';
+import type { Order } from '../../types/orders';
 
 type OrderKeys = 'id' | 'customerName' | 'status' | 'total' | 'orderDate';
 
@@ -30,15 +32,11 @@ export const OrderTable = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState<{ key: OrderKeys, direction: 'asc' | 'desc' } | null>(null);
+  const [filters, setFilters] = useState<Order[] | null>(null)
   const theme = useTheme();
+  const getStatusColor = useStatusColor()
   const { mode } = useColorScheme()
 
-  const filteredOrders = useMemo(() => {
-    return orders.filter(order =>
-      order.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.id.toString().includes(searchTerm) ||
-      order.status.toLowerCase().includes(searchTerm.toLowerCase()))
-  }, [orders, searchTerm]);
 
   const handleChangePage = (_: unknown, newPage: number) => {
     setPage(newPage);
@@ -62,39 +60,32 @@ export const OrderTable = () => {
   };
 
   const sortedOrders = useMemo(() => {
-    const sorted = [...filteredOrders];
-    if (!sortConfig) return sorted;
+    const sorted = (filters ? [...filters] : [...orders])
+      .filter((order) =>
+        order.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        order.id.toLowerCase().includes(searchTerm.toLowerCase())
+      )
 
-    sorted.sort((a, b) => {
-      const { key, direction } = sortConfig;
-      const factor = direction === 'asc' ? 1 : -1;
+    if (sortConfig) {
+      sorted.sort((a, b) => {
+        const { key, direction } = sortConfig;
+        const factor = direction === 'asc' ? 1 : -1;
 
-      if (key === 'orderDate') {
-        return (new Date(a[key]).getTime() - new Date(b[key]).getTime()) * factor;
-      }
-      if (key === 'total') {
-        return (a[key] - b[key]) * factor;
-      }
-      if (key === 'status') {
-        return (a[key] === b[key] ? 0 : a[key] > b[key] ? 1 : -1) * factor;
-      }
-      return (a[key].toString().localeCompare(b[key].toString())) * factor;
-    });
+        if (key === 'orderDate') {
+          return (new Date(a[key]).getTime() - new Date(b[key]).getTime()) * factor;
+        }
+        if (key === 'total') {
+          return (a[key] - b[key]) * factor;
+        }
+        if (key === 'status') {
+          return (a[key] === b[key] ? 0 : a[key] > b[key] ? 1 : -1) * factor;
+        }
+        return (a[key].toString().localeCompare(b[key].toString())) * factor;
+      });
+    }
 
     return sorted;
-  }, [filteredOrders, sortConfig]);
-
-
-  const getStatusColor = (status: OrderStatus) => {
-    switch (status) {
-      case 'pending': return theme.palette.warning.main;
-      case 'delivered': return theme.palette.success.main;
-      case 'cancelled': return theme.palette.error.main;
-      case 'shipped': return theme.palette.info.main;
-      case 'processing': return theme.palette.secondary.main
-      default: return theme.palette.grey[500];
-    }
-  };
+  }, [orders, searchTerm, sortConfig, filters]);
 
   return (
     <Paper
@@ -118,29 +109,36 @@ export const OrderTable = () => {
       }}>
         <Box>
           <Typography variant="subtitle1" fontWeight={600}>
-            {filteredOrders.length} orders
+            {sortedOrders.length} orders
           </Typography>
           <Typography variant="body2" color="text.secondary">
             Updated just now
           </Typography>
         </Box>
 
-        <TextField
-          variant="outlined"
-          size="small"
-          placeholder="Search orders..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          slotProps={{
-            input: {
-              startAdornment: (<InputAdornment position='start'>
-                <SearchIcon />
-              </InputAdornment>),
-              sx: { borderRadius: 2, backgroundColor: theme.palette.background.default },
-            }
-          }}
-          sx={{ minWidth: 300 }}
-        />
+        <Box display="flex" gap={1} flexWrap="wrap">
+          <TextField
+            variant="outlined"
+            size="small"
+            placeholder="Search orders..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            slotProps={{
+              input: {
+                startAdornment: (<InputAdornment position='start'>
+                  <SearchIcon />
+                </InputAdornment>),
+                sx: { borderRadius: 2, backgroundColor: theme.palette.background.default },
+              }
+            }}
+            sx={{ minWidth: 300 }}
+          />
+
+          <OrderFilters
+            orders={orders}
+            onFilterChange={(orders) => setFilters(orders)}
+          />
+        </Box>
       </Box>
 
       <TableContainer>
@@ -153,9 +151,9 @@ export const OrderTable = () => {
             }}>
               <TableCell sx={{ fontWeight: 700, cursor: 'pointer' }} onClick={() => handleSort('id')}>ORDER ID {sortConfig?.key === 'id' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}</TableCell>
               <TableCell sx={{ fontWeight: 700, cursor: 'pointer' }} onClick={() => handleSort('customerName')}>CUSTOMER {sortConfig?.key === 'customerName' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}</TableCell>
-              <TableCell sx={{ fontWeight: 700, cursor: 'pointer' }} onClick={()=> handleSort('status')}>STATUS {sortConfig?.key === 'status' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}</TableCell>
-              <TableCell sx={{ fontWeight: 700, cursor: 'pointer' }} align="right" onClick={()=> handleSort('total')}>TOTAL {sortConfig?.key === 'total' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}</TableCell>
-              <TableCell sx={{ fontWeight: 700, cursor: 'pointer' }} onClick={()=> handleSort('orderDate')}>DATE {sortConfig?.key === 'orderDate' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}</TableCell>
+              <TableCell sx={{ fontWeight: 700, cursor: 'pointer' }} onClick={() => handleSort('status')}>STATUS {sortConfig?.key === 'status' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}</TableCell>
+              <TableCell sx={{ fontWeight: 700, cursor: 'pointer' }} align="right" onClick={() => handleSort('total')}>TOTAL {sortConfig?.key === 'total' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}</TableCell>
+              <TableCell sx={{ fontWeight: 700, cursor: 'pointer' }} onClick={() => handleSort('orderDate')}>DATE {sortConfig?.key === 'orderDate' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}</TableCell>
             </TableRow>
           </TableHead>
 
@@ -198,7 +196,7 @@ export const OrderTable = () => {
       <TablePagination
         rowsPerPageOptions={[5, 10, 25]}
         component="div"
-        count={filteredOrders.length}
+        count={sortedOrders.length}
         rowsPerPage={rowsPerPage}
         page={page}
         onPageChange={handleChangePage}

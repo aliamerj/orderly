@@ -17,6 +17,7 @@ function App() {
   useEffect(() => {
     startTransition(async () => {
       try {
+         //1. Simulate fetching data from backend
         const res = await fetch("/data/mock-orders.json");
         if (!res.ok) throw new Error("Failed to load orders");
         const data = await res.json();
@@ -28,7 +29,7 @@ function App() {
     });
   }, []);
 
-  //1. simulate real-time status updates (simulate with intervals) 
+  //2. simulate real-time status updates (simulate with intervals) 
 
   //Usage:
   // chance(0.1) = 10% chance
@@ -44,7 +45,6 @@ function App() {
       dispatch((prevDispatch, getState) => {
         const { orders } = getState().orders
         // Simulate status transitions
-
         orders.forEach(order => {
           if (order.status === "pending" && chance(0.1)) {
             prevDispatch(updateOrderStatus({ id: order.id, status: 'shipped' }));
