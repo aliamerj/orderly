@@ -1,14 +1,13 @@
-import { useEffect, useState, useTransition } from 'react';
+import React, { useEffect, useState, useTransition } from 'react';
 import { useDispatch } from 'react-redux';
 import type { AppDispatch } from './app/store';
 import type { Order } from '../types/orders';
 import { addNewOrder, setOrders, updateOrderStatus } from './features/orders/orderSlice';
 import { Box, Container, Paper, Skeleton, Typography, useColorScheme } from '@mui/material';
 import { Navbar } from './components/Navbar';
-import { OrderTable } from './components/OrderTable';
 import { createOrder } from './fakeDataGenerater';
 import { useSnackbar } from 'notistack';
-
+const OrderTable = React.lazy(() => import('./components/OrderTable'));
 //Usage:
 // chance(0.1) = 10% chance
 // chance(0.5) = 50% chance

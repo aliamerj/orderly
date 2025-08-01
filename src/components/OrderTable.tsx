@@ -32,7 +32,7 @@ import CheckBoxIcon from '@mui/icons-material/CheckBox';
 import IndeterminateCheckBoxIcon from '@mui/icons-material/IndeterminateCheckBox';
 type OrderKeys = 'id' | 'customerName' | 'status' | 'total' | 'orderDate';
 
-export const OrderTable = () => {
+const OrderTable = () => {
   const orders = useSelector((state: RootState) => state.orders.orders);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -270,3 +270,5 @@ export const OrderTable = () => {
     </>
   );
 }
+
+export default OrderTable
