@@ -1,7 +1,8 @@
 import { AppBar, Toolbar, Box, Typography, IconButton, useColorScheme } from '@mui/material';
 import { Brightness4, Brightness7 } from '@mui/icons-material';
+import React from 'react';
 
-export const Navbar = () => {
+export const Navbar = React.memo(() => {
   const { mode, setMode } = useColorScheme()
   return (
     <AppBar position="sticky" elevation={0}>
@@ -54,4 +55,4 @@ export const Navbar = () => {
       </Toolbar>
     </AppBar>
   );
-};
+});

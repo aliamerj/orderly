@@ -25,13 +25,14 @@ import HomeIcon from '@mui/icons-material/Home';
 import { format } from 'date-fns';
 import type { Order } from '../../../types/orders';
 import { useStatusColor } from '../../hooks';
+import React from 'react';
 
 interface OrderDetailsDialogProps {
   onClose: () => void;
   order: Order | null;
 }
 
-export const OrderDetailsDialog = ({ onClose, order }: OrderDetailsDialogProps) => {
+export const OrderDetailsDialog = React.memo(({ onClose, order }: OrderDetailsDialogProps) => {
   const theme = useTheme();
   const getStatusColor = useStatusColor()
 
@@ -230,4 +231,4 @@ export const OrderDetailsDialog = ({ onClose, order }: OrderDetailsDialogProps) 
       </DialogActions>
     </Dialog>
   );
-};
+});

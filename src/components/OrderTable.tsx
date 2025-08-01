@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import type { RootState } from "../app/store";
 import { useSelector } from "react-redux";
 import {
@@ -23,7 +23,7 @@ import {
 import SearchIcon from '@mui/icons-material/Search';
 import { format } from "date-fns";
 import { OrderFilters } from './ui/OrderFilters';
-import { useStatusColor } from '../hooks';
+import { useDebounce, useStatusColor } from '../hooks';
 import type { Order } from '../../types/orders';
 import { OrderDetailsDialog } from './ui/OrderDetailsDialog';
 import { BulkActions } from './ui/BulkActions';
@@ -42,20 +42,21 @@ export const OrderTable = () => {
   const [clickedOrder, setClickedOrder] = useState<Order | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
   const theme = useTheme();
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const getStatusColor = useStatusColor()
   const { mode } = useColorScheme()
 
 
-  const handleChangePage = (_: unknown, newPage: number) => {
+  const handleChangePage = useCallback((_: unknown, newPage: number) => {
     setPage(newPage);
-  };
+  }, []);
 
-  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChangeRowsPerPage = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
-  };
+  }, []);
 
-  const handleSort = (key: OrderKeys) => {
+  const handleSort = useCallback((key: OrderKeys) => {
     setSortConfig(prev => {
       if (!prev || prev.key !== key) {
         return { key, direction: 'asc' };
@@ -65,19 +66,21 @@ export const OrderTable = () => {
         direction: prev.direction === 'asc' ? 'desc' : 'asc'
       };
     });
-  };
+  }, []);
 
-  const handleSelectAllClick = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSelectAllClick = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     if (!event.target.checked) return setSelected([])
     const newSelected = orders.map(order => order.id);
     setSelected(newSelected);
-  };
+  }, [orders]);
 
   const sortedOrders = useMemo(() => {
     const sorted = (filters ? [...filters] : [...orders])
-      .filter((order) =>
-        order.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.id.toLowerCase().includes(searchTerm.toLowerCase())
+      .filter((order) => {
+        if (!debouncedSearchTerm) return true;
+        return order.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          order.id.toLowerCase().includes(searchTerm.toLowerCase())
+      }
       )
 
     if (sortConfig) {
@@ -105,7 +108,7 @@ export const OrderTable = () => {
     }
 
     return sorted;
-  }, [orders, searchTerm, sortConfig, filters]);
+  }, [orders, debouncedSearchTerm, sortConfig, filters]);
 
   return (
     <>

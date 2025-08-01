@@ -71,7 +71,7 @@ export const BulkActions = ({ selectedOrdersId, onUnSelectedOrder }: { selectedO
           onClose={() => setBulkActionAnchor(null)}
         >
           {statusOptions.map(status => (
-            <MenuItem onClick={() => handleBulkStatusChange(status)}>
+            <MenuItem key={status} onClick={() => handleBulkStatusChange(status)}>
               Mark as
               <Chip
                 label={status}

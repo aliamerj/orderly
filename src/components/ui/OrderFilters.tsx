@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   Button,
@@ -36,7 +36,7 @@ type AmountRange = {
 };
 
 
-export const OrderFilters = ({ orders, onFilterChange }: { orders: Order[], onFilterChange: (orders: Order[] | null) => void }) => {
+export const OrderFilters = React.memo(({ orders, onFilterChange }: { orders: Order[], onFilterChange: (orders: Order[] | null) => void }) => {
   const theme = useTheme();
   const today = new Date();
   const getStatusColor = useStatusColor()
@@ -420,4 +420,4 @@ export const OrderFilters = ({ orders, onFilterChange }: { orders: Order[], onFi
       </Menu>
     </Box>
   );
-};
+});

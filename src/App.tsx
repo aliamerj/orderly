@@ -9,6 +9,15 @@ import { OrderTable } from './components/OrderTable';
 import { createOrder } from './fakeDataGenerater';
 import { useSnackbar } from 'notistack';
 
+//Usage:
+// chance(0.1) = 10% chance
+// chance(0.5) = 50% chance
+// chance(1) = always true
+// chance(0) = always false
+function chance(probability: number): boolean {
+  return Math.random() < probability;
+}
+
 function App() {
   const dispatch = useDispatch<AppDispatch>();
   const [isPending, startTransition] = useTransition();
@@ -33,16 +42,6 @@ function App() {
   }, []);
 
   //2. simulate real-time status updates (simulate with intervals) 
-
-  //Usage:
-  // chance(0.1) = 10% chance
-  // chance(0.5) = 50% chance
-  // chance(1) = always true
-  // chance(0) = always false
-  function chance(probability: number): boolean {
-    return Math.random() < probability;
-  }
-
   useEffect(() => {
     const interval = setInterval(() => {
       dispatch((prevDispatch, getState) => {
@@ -76,6 +75,7 @@ function App() {
     return () => clearInterval(interval);
   }, [])
 
+  //3. simulate real-time new order coming every 10 seconds
   useEffect(() => {
     let currentOrderCount = 20;
     const interval = setInterval(() => {
@@ -83,10 +83,10 @@ function App() {
       dispatch(addNewOrder(newOrder))
       enqueueSnackbar(`📦 New order from ${newOrder.customerName}`, {
         variant: 'warning',
-        style: {color: 'black', fontWeight: 600}
+        style: { color: 'black', fontWeight: 600 }
       });
       currentOrderCount += 1
-    }, 15000)// every 15 seconds
+    }, 10000)// every 15 seconds
     return () => clearInterval(interval);
   }, [])
 
