@@ -25,6 +25,7 @@ import { useTheme } from '@mui/material/styles';
 import { statusOptions, type Order, type OrderStatus } from '../../../types/orders';
 import { useStatusColor } from '../../hooks';
 
+// Types for filtering
 type DateRange = {
   startDate: Date | null;
   endDate: Date | null;
@@ -35,19 +36,22 @@ type AmountRange = {
   max: number | null;
 };
 
-
+// Memoized OrderFilters component to avoid unnecessary re-renders
 export const OrderFilters = React.memo(({ orders, onFilterChange }: { orders: Order[], onFilterChange: (orders: Order[] | null) => void }) => {
   const theme = useTheme();
   const today = new Date();
   const getStatusColor = useStatusColor()
 
+  // Filter states
   const [statusFilter, setStatusFilter] = useState<OrderStatus[]>([]);
   const [dateRange, setDateRange] = useState<DateRange>({ startDate: null, endDate: null });
   const [amountRange, setAmountRange] = useState<AmountRange>({ min: null, max: null });
 
+  // UI state for filter button and menu
   const [activeFilters, setActiveFilters] = useState(0);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
+  // Toggle status selection
   const handleStatusChange = (status: OrderStatus) => {
     setStatusFilter(prev =>
       prev.includes(status)
@@ -56,7 +60,7 @@ export const OrderFilters = React.memo(({ orders, onFilterChange }: { orders: Or
     );
   };
 
-
+  // Apply filters whenever any filter state changes
   useEffect(() => {
     const { startDate, endDate } = dateRange;
     const { min, max } = amountRange;
@@ -75,6 +79,7 @@ export const OrderFilters = React.memo(({ orders, onFilterChange }: { orders: Or
       return;
     }
 
+    // Filter logic
     const filtered = orders.filter(order => {
       const matchesStatus = !isStatusActive || statusFilter.includes(order.status);
 
@@ -93,7 +98,7 @@ export const OrderFilters = React.memo(({ orders, onFilterChange }: { orders: Or
     onFilterChange(filtered);
   }, [statusFilter, dateRange, amountRange, orders]);
 
-
+  // Reset all filters
   const handleResetAllFilters = () => {
     setStatusFilter([]);
     setDateRange({ startDate: null, endDate: null });
@@ -107,6 +112,7 @@ export const OrderFilters = React.memo(({ orders, onFilterChange }: { orders: Or
   const endDate = dateRange.endDate ?? today
   return (
     <Box>
+      {/* Filter button with active count */}
       <Badge badgeContent={activeFilters} color="primary">
         <Button
           variant="outlined"
@@ -123,6 +129,7 @@ export const OrderFilters = React.memo(({ orders, onFilterChange }: { orders: Or
         </Button>
       </Badge>
 
+      {/* Clear all button */}
       {activeFilters > 0 && (
         <Button
           variant="text"
@@ -138,6 +145,7 @@ export const OrderFilters = React.memo(({ orders, onFilterChange }: { orders: Or
         </Button>
       )}
 
+      {/* Filter popup menu */}
       <Menu
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}

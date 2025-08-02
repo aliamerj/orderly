@@ -38,15 +38,17 @@ const OrderTable = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState<{ key: OrderKeys, direction: 'asc' | 'desc' } | null>(null);
-  const [filters, setFilters] = useState<Order[] | null>(null)
+  const [filters, setFilters] = useState<Order[] | null>(null);
   const [clickedOrder, setClickedOrder] = useState<Order | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
+
   const theme = useTheme();
+  const { mode } = useColorScheme();
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
-  const getStatusColor = useStatusColor()
-  const { mode } = useColorScheme()
+  const getStatusColor = useStatusColor();
 
 
+  // Pagination handlers
   const handleChangePage = useCallback((_: unknown, newPage: number) => {
     setPage(newPage);
   }, []);
@@ -56,6 +58,7 @@ const OrderTable = () => {
     setPage(0);
   }, []);
 
+  // Sort handler with toggle (asc/desc)
   const handleSort = useCallback((key: OrderKeys) => {
     setSortConfig(prev => {
       if (!prev || prev.key !== key) {
@@ -68,46 +71,45 @@ const OrderTable = () => {
     });
   }, []);
 
+  // Select all checkbox handler
   const handleSelectAllClick = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     if (!event.target.checked) return setSelected([])
     const newSelected = orders.map(order => order.id);
     setSelected(newSelected);
   }, [orders]);
 
+  // Main sorted + filtered + searched orders list
   const sortedOrders = useMemo(() => {
-    const sorted = (filters ? [...filters] : [...orders])
-      .filter((order) => {
-        if (!debouncedSearchTerm) return true;
-        return order.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          order.id.toLowerCase().includes(searchTerm.toLowerCase())
-      }
-      )
+    const base = filters ? [...filters] : [...orders];
 
+    // Global search
+    const filtered = base.filter(order =>
+      !debouncedSearchTerm ||
+      order.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.id.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    // Sorting logic
     if (sortConfig) {
-      sorted.sort((a, b) => {
+      filtered.sort((a, b) => {
         const { key, direction } = sortConfig;
         const factor = direction === 'asc' ? 1 : -1;
 
-        if (key === 'orderDate') {
-          return (new Date(a[key]).getTime() - new Date(b[key]).getTime()) * factor;
-        }
-        if (key === 'total') {
-          return (a[key] - b[key]) * factor;
-        }
-        if (key === 'status') {
-          return (a[key] === b[key] ? 0 : a[key] > b[key] ? 1 : -1) * factor;
-        }
+        if (key === 'orderDate') return (new Date(a[key]).getTime() - new Date(b[key]).getTime()) * factor;
+        if (key === 'total') return (a[key] - b[key]) * factor;
+        if (key === 'status') return (a[key] === b[key] ? 0 : a[key] > b[key] ? 1 : -1) * factor;
         return (a[key].toString().localeCompare(b[key].toString())) * factor;
       });
     }
 
+    // Update details dialog if selected order changed
     if (clickedOrder) {
       const updateOrder = orders.find(o => o.id === clickedOrder.id)
-      if (!updateOrder) return sorted
+      if (!updateOrder) return filtered
       setClickedOrder(updateOrder)
     }
 
-    return sorted;
+    return filtered;
   }, [orders, debouncedSearchTerm, sortConfig, filters]);
 
   return (
@@ -122,7 +124,14 @@ const OrderTable = () => {
           transition: 'all 0.3s ease'
         }}
       >
-        {selected.length > 0 && (<BulkActions selectedOrdersId={selected} onUnSelectedOrder={() => setSelected([])} />)}
+        {/* Bulk Action Bar */}
+        {selected.length > 0 && (
+          <BulkActions
+            selectedOrdersId={selected}
+            onUnSelectedOrder={() => setSelected([])} />
+        )}
+
+        {/* Header & Filters */}
         <Box sx={{
           p: 3,
           display: 'flex',
@@ -142,7 +151,7 @@ const OrderTable = () => {
             </Typography>
           </Box>
 
-          <Stack direction="row" spacing={1} alignItems="center"  sx={{justifyContent: 'center', gap: 1}} flexWrap="wrap">
+          <Stack direction="row" spacing={1} alignItems="center" sx={{ justifyContent: 'center', gap: 1 }} flexWrap="wrap">
             <TextField
               variant="outlined"
               size="small"
@@ -160,6 +169,7 @@ const OrderTable = () => {
               sx={{ minWidth: 300 }}
             />
 
+            {/* Advanced Filters */}
             <OrderFilters
               orders={orders}
               onFilterChange={(orders) => setFilters(orders)}
@@ -167,6 +177,7 @@ const OrderTable = () => {
           </Stack>
         </Box>
 
+        {/* Main Table */}
         <TableContainer>
           <Table>
             <TableHead>
@@ -191,6 +202,7 @@ const OrderTable = () => {
                     }}
                   />
                 </TableCell>
+                {/* Column Headers with Sort Indicators */}
                 <TableCell sx={{ fontWeight: 700, cursor: 'pointer' }} onClick={() => handleSort('id')}>ORDER ID {sortConfig?.key === 'id' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}</TableCell>
                 <TableCell sx={{ fontWeight: 700, cursor: 'pointer' }} onClick={() => handleSort('customerName')}>CUSTOMER {sortConfig?.key === 'customerName' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}</TableCell>
                 <TableCell sx={{ fontWeight: 700, cursor: 'pointer' }} onClick={() => handleSort('status')}>STATUS {sortConfig?.key === 'status' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : ''}</TableCell>
@@ -200,6 +212,7 @@ const OrderTable = () => {
             </TableHead>
 
             <TableBody>
+              {/* Paginated Orders */}
               {sortedOrders.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                 .map((order) => (
                   <TableRow
@@ -247,6 +260,7 @@ const OrderTable = () => {
           </Table>
         </TableContainer>
 
+        {/* Pagination Controls */}
         <TablePagination
           rowsPerPageOptions={[5, 10, 25]}
           component="div"
@@ -262,6 +276,8 @@ const OrderTable = () => {
               : 'rgba(241, 243, 245, 0.8)'
           }}
         />
+
+      {/* Modal Dialog for Selected Order */}
       </Paper>
       <OrderDetailsDialog
         onClose={() => setClickedOrder(null)}

@@ -1,7 +1,7 @@
 import { Box, Button, Chip, IconButton, Menu, MenuItem, Toolbar, Tooltip, Typography, useColorScheme, useTheme } from "@mui/material"
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown'
 import CloseIcon from '@mui/icons-material/Close';
-import { useState } from "react";
+import React, { useState } from "react";
 import { useStatusColor } from "../../hooks";
 import { statusOptions, type OrderStatus } from "../../../types/orders";
 import { updateMultipleOrderStatuses } from "../../features/orders/orderSlice";
@@ -9,7 +9,9 @@ import { useDispatch } from "react-redux";
 import type { AppDispatch } from "../../app/store";
 import { useSnackbar } from "notistack";
 
-export const BulkActions = ({ selectedOrdersId, onUnSelectedOrder }: { selectedOrdersId: string[], onUnSelectedOrder: () => void }) => {
+// BulkActions: Toolbar that appears when orders are selected
+// Allows updating status in bulk or clearing selection
+export const BulkActions = React.memo(({ selectedOrdersId, onUnSelectedOrder }: { selectedOrdersId: string[], onUnSelectedOrder: () => void }) => {
   const theme = useTheme()
   const { mode } = useColorScheme()
   const getStatusColor = useStatusColor()
@@ -17,22 +19,24 @@ export const BulkActions = ({ selectedOrdersId, onUnSelectedOrder }: { selectedO
   const { enqueueSnackbar } = useSnackbar();
   const [bulkActionAnchor, setBulkActionAnchor] = useState<null | HTMLElement>(null);
 
-
+  // Handle status update for all selected orders
   const handleBulkStatusChange = (status: OrderStatus) => {
     setBulkActionAnchor(null);
 
     // In a real app, you make backend Call to update the order in the Database first 
     dispatch(updateMultipleOrderStatuses({ ids: selectedOrdersId, status }))
 
+    // Show confirmation toast
     enqueueSnackbar(`Marked ${selectedOrdersId.length} orders as ${status}`, {
       variant: 'success',
       style: { color: 'black', fontWeight: 600 }
     });
 
+    // Clear selection after action
     onUnSelectedOrder()
   };
 
-
+  // Show status dropdown menu
   const handleBulkActionClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     setBulkActionAnchor(event.currentTarget);
   };
@@ -87,7 +91,6 @@ export const BulkActions = ({ selectedOrdersId, onUnSelectedOrder }: { selectedO
             </MenuItem>
           ))}
         </Menu>
-
         <Tooltip title="Clear selection">
           <IconButton onClick={onUnSelectedOrder}>
             <CloseIcon />
@@ -96,4 +99,4 @@ export const BulkActions = ({ selectedOrdersId, onUnSelectedOrder }: { selectedO
       </Box>
     </Toolbar>
   )
-}
+})

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useTransition } from 'react';
+import React, { Suspense, useEffect, useState, useTransition } from 'react';
 import { useDispatch } from 'react-redux';
 import type { AppDispatch } from './app/store';
 import type { Order } from '../types/orders';
@@ -8,6 +8,8 @@ import { Navbar } from './components/Navbar';
 import { createOrder } from './fakeDataGenerater';
 import { useSnackbar } from 'notistack';
 const OrderTable = React.lazy(() => import('./components/OrderTable'));
+
+// Random chance utility
 //Usage:
 // chance(0.1) = 10% chance
 // chance(0.5) = 50% chance
@@ -24,7 +26,7 @@ function App() {
   const { mode } = useColorScheme()
   const { enqueueSnackbar } = useSnackbar();
 
-
+  // Load initial order data from JSON file
   useEffect(() => {
     startTransition(async () => {
       try {
@@ -149,9 +151,9 @@ function App() {
             </Typography>
           </Paper>
         ) : (
-          <div>
+          <Suspense fallback={<Skeleton variant="rounded" height={400} />}>
             <OrderTable />
-          </div>
+          </Suspense>
         )}
       </Container>
     </Box>

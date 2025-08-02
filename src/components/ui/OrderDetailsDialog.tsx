@@ -36,7 +36,9 @@ export const OrderDetailsDialog = React.memo(({ onClose, order }: OrderDetailsDi
   const theme = useTheme();
   const getStatusColor = useStatusColor()
 
+  // Don't render dialog if no order is clicked
   if (!order) return;
+ 
   return (
     <Dialog
       open={!!order}
